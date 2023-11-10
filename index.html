@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Camera Snapshot with Automatic Submission</title>
+  </head>
+  <body>
+    <h1>Camera Snapshot with Automatic Submission</h1>
+
+    <!-- Video Stream -->
+    <video id="video" autoplay></video>
+
+    <!-- Capture Button -->
+    <button id="capture">Take Snapshot and Submit</button>
+
+    <!-- Canvas for Snapshot -->
+    <canvas id="canvas" style="display: none"></canvas>
+
+    <!-- Display Snapshot Image -->
+    <img id="snapshot" alt="Snapshot" style="display: none" />
+
+    <!-- Form to Submit Snapshot -->
+    <form id="snapshotForm" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" id="snapshotData" name="snapshotData" />
+    </form>
+
+    <script>
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const captureButton = document.getElementById("capture");
+      const snapshot = document.getElementById("snapshot");
+      const snapshotDataInput = document.getElementById("snapshotData");
+      const snapshotForm = document.getElementById("snapshotForm");
+
+      let stream;
+
+      // Get user media (camera) stream
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
+        .then((stream) => {
+          video.srcObject = stream;
+          stream = stream; // Store the stream for later use
+        })
+        .catch((error) => {
+          console.error("Error accessing camera:", error);
+        });
+
+      // Capture a snapshot and submit the form
+      captureButton.addEventListener("click", () => {
+        const context = canvas.getContext("2d");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Display the snapshot image
+        snapshot.src = canvas.toDataURL("image/jpeg");
+        snapshot.style.display = "block";
+
+        // Hide the video element
+        video.style.display = "none";
+
+        // Show the canvas element (optional)
+        canvas.style.display = "block";
+
+        // Set the value of the hidden input to the Base64-encoded image data
+        snapshotDataInput.value = canvas.toDataURL("image/jpeg");
+
+        // Disable the capture button
+        captureButton.disabled = true;
+
+        // Submit the form
+        snapshotForm.submit();
+
+        // Stop the camera stream
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+        }
+      });
+    </script>
+  </body>
+</html>
